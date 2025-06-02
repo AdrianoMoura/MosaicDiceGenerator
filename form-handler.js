@@ -232,10 +232,21 @@ exportTextButton.addEventListener('click', () => {
   ]
 
   let bodyLines = []
+
+  // Column headers
+  const columnHeader = ['']
+    .concat(Array.from({ length: cols }, (_, i) => `D${i + 1}`))
+    .join('\t')
+  bodyLines.push(columnHeader)
+
+  // Separator line
+  const separatorLine = ['--'].concat(Array(cols).fill('---')).join('\t')
+  bodyLines.push(separatorLine)
+
   for (let y = 0; y < rows; y++) {
-    const row = []
+    const row = [`L${y + 1}`]
     for (let x = 0; x < cols; x++) {
-      const value = grayscaleToDiceLevel(imgMatrix[y * cols + x])
+      const value = `${grayscaleToDiceLevel(imgMatrix[y * cols + x])}`
       row.push(value)
     }
     bodyLines.push(row.join('\t'))
