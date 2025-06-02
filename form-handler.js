@@ -1,3 +1,4 @@
+// Get references to DOM elements
 const inputImage = document.getElementById('image-upload')
 const diceSizeInput = document.getElementById('dice-size')
 
@@ -13,15 +14,15 @@ const exportButton = document.getElementById('export-button')
 const exportTextButton = document.getElementById('export-text-button')
 const contrastSlider = document.getElementById('contrast-slider')
 
-let imgRef // avoid warning, p5 uses the global `img` variable in the sketch
+let imgRef // Used to keep a reference to the loaded image for p5.js
 let baseImageName = ''
 let aspectRatio = null
 
-// Helpers
+// Helper functions for unit conversion
 const toCm = (px, mm) => ((px * mm) / 10).toFixed(1)
 const toPx = (cm, mm) => Math.round((cm * 10) / mm)
 
-// Update based on dice width
+// Update output fields when width in dice changes
 function updateFromDataWidth () {
   if (!aspectRatio) return
   const mm = parseFloat(diceSizeInput.value) || 16
@@ -34,7 +35,7 @@ function updateFromDataWidth () {
   outputHeightCmInput.value = toCm(h, mm)
 }
 
-// Update based on dice height
+// Update output fields when height in dice changes
 function updateFromDataHeight () {
   if (!aspectRatio) return
   const mm = parseFloat(diceSizeInput.value) || 16
@@ -47,7 +48,7 @@ function updateFromDataHeight () {
   outputHeightCmInput.value = toCm(h, mm)
 }
 
-// Update based on width in cm
+// Update output fields when width in centimeters changes
 function updateFromCmWidth () {
   if (!aspectRatio) return
   const mm = parseFloat(diceSizeInput.value) || 16
@@ -61,7 +62,7 @@ function updateFromCmWidth () {
   outputHeightCmInput.value = toCm(h, mm)
 }
 
-// Update based on height in cm
+// Update output fields when height in centimeters changes
 function updateFromCmHeight () {
   if (!aspectRatio) return
   const mm = parseFloat(diceSizeInput.value) || 16
@@ -75,17 +76,19 @@ function updateFromCmHeight () {
   outputWidthCmInput.value = toCm(w, mm)
 }
 
-// Update when dice size changes
+// Update centimeter fields when dice size changes
 function updateFromDiceSize () {
   if (!aspectRatio) return
   const mm = parseFloat(diceSizeInput.value) || 16
   const w = parseInt(outputWidthInput.value)
   const h = parseInt(outputHeightInput.value)
 
+  shouldUpdate = true
   outputWidthCmInput.value = toCm(w, mm)
   outputHeightCmInput.value = toCm(h, mm)
 }
 
+// Update the total number of dice and price
 function updateTotalDice () {
   const w = parseInt(outputWidthInput.value)
   const h = parseInt(outputHeightInput.value)
@@ -100,7 +103,7 @@ function updateTotalDice () {
   totalPriceText.textContent = `Total price: $${totalPrice.toFixed(2)}`
 }
 
-// Image upload
+// Handle image upload and initialize output fields
 inputImage.addEventListener('change', e => {
   const file = e.target.files[0]
   if (!file) return
@@ -114,22 +117,39 @@ inputImage.addEventListener('change', e => {
     aspectRatio = pixelWidth / pixelHeight
     const mm = parseFloat(diceSizeInput.value) || 16
 
+    // Limit the physical size to 200 cm
+    const maxCm = 200
+    const dicePerCm = 10 / mm // 1 cm = 10 mm, so how many dice fit in 1 cm
+    const maxDice = Math.floor(maxCm * dicePerCm)
+
+    let cols = Math.floor(pixelWidth / 10)
+    let rows = Math.floor(pixelHeight / 10)
+
+    // If the number of dice exceeds the limit, scale down proportionally
+    if (cols > maxDice || rows > maxDice) {
+      const scale = Math.min(maxDice / cols, maxDice / rows)
+      cols = Math.floor(cols * scale)
+      rows = Math.floor(rows * scale)
+    }
+
+    // Load the image into p5.js and trigger update
     imgRef = loadImage(URL.createObjectURL(file), loadedImage => {
       imgOriginalCanvas = loadedImage
       shouldUpdate = true
     })
 
-    outputWidthInput.value = pixelWidth / 10
-    outputHeightInput.value = pixelHeight / 10
-    outputWidthCmInput.value = toCm(outputWidthInput.value, mm)
-    outputHeightCmInput.value = toCm(outputHeightInput.value, mm)
-    contrastSlider.value = 1 // Reset contrast to default
+    // Set output fields
+    outputWidthInput.value = cols
+    outputHeightInput.value = rows
+    outputWidthCmInput.value = toCm(cols, mm)
+    outputHeightCmInput.value = toCm(rows, mm)
+    contrastSlider.value = 1
     updateTotalDice()
   }
   img.src = URL.createObjectURL(file)
 })
 
-// Listeners
+// Input listeners for all relevant fields
 outputWidthInput.addEventListener('input', () => {
   updateFromDataWidth()
   updateTotalDice()
@@ -160,6 +180,7 @@ contrastSlider.addEventListener('input', () => {
   shouldUpdate = true
 })
 
+// Export PNG button handler
 exportButton.addEventListener('click', () => {
   const cols = parseInt(outputWidthInput.value)
   const rows = parseInt(outputHeightInput.value)
@@ -174,6 +195,7 @@ exportButton.addEventListener('click', () => {
   safeSaveCanvas(buffer, getExportFileName('png'))
 })
 
+// Helper to safely export PNG, checking for excessive image size
 function safeSaveCanvas (canvas, filename) {
   const maxPixels = 8192 * 8192 // safe limit (~67MP)
   const pixelCount = canvas.width * canvas.height
@@ -193,6 +215,7 @@ function safeSaveCanvas (canvas, filename) {
   }
 }
 
+// Helper to generate export file name based on parameters
 function getExportFileName (ext) {
   const cols = parseInt(outputWidthInput.value)
   const rows = parseInt(outputHeightInput.value)
@@ -200,6 +223,7 @@ function getExportFileName (ext) {
   return `${baseImageName}_${cols}x${rows}_${invert}.${ext}`
 }
 
+// Export TXT button handler
 exportTextButton.addEventListener('click', () => {
   const cols = parseInt(outputWidthInput.value)
   const rows = parseInt(outputHeightInput.value)
@@ -217,6 +241,7 @@ exportTextButton.addEventListener('click', () => {
   const totalPrice = isNaN(v) ? 0 : totalDice * v
   const now = new Date()
 
+  // Prepare header for TXT export
   const headerLines = [
     `# Dice Mosaic Reference`,
     `# Original image: ${baseImageName}`,
@@ -233,16 +258,17 @@ exportTextButton.addEventListener('click', () => {
 
   let bodyLines = []
 
-  // Column headers
+  // Add column headers
   const columnHeader = ['']
     .concat(Array.from({ length: cols }, (_, i) => `D${i + 1}`))
     .join('\t')
   bodyLines.push(columnHeader)
 
-  // Separator line
+  // Add separator line
   const separatorLine = ['--'].concat(Array(cols).fill('---')).join('\t')
   bodyLines.push(separatorLine)
 
+  // Add dice values for each row
   for (let y = 0; y < rows; y++) {
     const row = [`L${y + 1}`]
     for (let x = 0; x < cols; x++) {
@@ -252,6 +278,7 @@ exportTextButton.addEventListener('click', () => {
     bodyLines.push(row.join('\t'))
   }
 
+  // Combine header and body, and trigger download
   const content = headerLines.concat(bodyLines).join('\n')
 
   const blob = new Blob([content], { type: 'text/plain' })
@@ -263,6 +290,7 @@ exportTextButton.addEventListener('click', () => {
   link.click()
 })
 
+// SVG export button handler
 document.getElementById('export-svg-button').addEventListener('click', () => {
   if (!imgMatrix || imgMatrix.length === 0) return
 
@@ -284,6 +312,7 @@ document.getElementById('export-svg-button').addEventListener('click', () => {
   const fill = invertColorInput.checked ? '#000000' : '#ffffff'
   const pipColor = invertColorInput.checked ? '#ffffff' : '#000000'
 
+  // Helper to convert grayscale to dice level
   const grayscaleToLevel = avg => {
     if (invertColorInput.checked) avg = 255 - avg
     if (avg >= 213) return 1
@@ -294,6 +323,7 @@ document.getElementById('export-svg-button').addEventListener('click', () => {
     return 6
   }
 
+  // Draw a single die at the given position and level
   const drawDie = (col, row, level) => {
     const x = col * dieSize
     const y = row * dieSize
@@ -304,6 +334,7 @@ document.getElementById('export-svg-button').addEventListener('click', () => {
     const top = y + offset
     const bottom = y + dieSize - offset
 
+    // Helper to add a pip (circle) to the SVG
     const addCircle = (cx, cy) => {
       const circle = document.createElementNS(svgNS, 'circle')
       circle.setAttribute('cx', cx)
@@ -313,6 +344,7 @@ document.getElementById('export-svg-button').addEventListener('click', () => {
       svg.appendChild(circle)
     }
 
+    // Draw the die square
     const rect = document.createElementNS(svgNS, 'rect')
     rect.setAttribute('x', x)
     rect.setAttribute('y', y)
@@ -323,6 +355,7 @@ document.getElementById('export-svg-button').addEventListener('click', () => {
     rect.setAttribute('ry', radius)
     svg.appendChild(rect)
 
+    // Draw pips according to dice level
     if ([1, 3, 5].includes(level)) addCircle(cx, cy)
     if (level >= 2) {
       addCircle(left, top)
@@ -338,6 +371,7 @@ document.getElementById('export-svg-button').addEventListener('click', () => {
     }
   }
 
+  // Draw all dice in the SVG
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const avg = imgMatrix[y * cols + x]
@@ -346,6 +380,7 @@ document.getElementById('export-svg-button').addEventListener('click', () => {
     }
   }
 
+  // Serialize and download the SVG
   const serializer = new XMLSerializer()
   const svgString = serializer.serializeToString(svg)
   const blob = new Blob([svgString], { type: 'image/svg+xml' })
