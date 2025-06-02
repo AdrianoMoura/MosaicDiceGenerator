@@ -29,7 +29,7 @@ This project transforms an uploaded image into a mosaic composed of dice, where 
 
 ## 🔧 Usage
 
-1. Access it here.
+1. Access it [here](https://adrianomoura.github.io/MosaicDiceGenerator/).
 2. Upload an image.
 3. Set the desired output size and dice size.
 4. Optionally adjust contrast or invert colors.
