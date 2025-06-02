@@ -150,6 +150,9 @@ diceSizeInput.addEventListener('input', () => {
   updateFromDiceSize()
   updateTotalDice()
 })
+diceValueInput.addEventListener('input', () => {
+  updateTotalDice()
+})
 invertColorInput.addEventListener('change', () => {
   shouldUpdate = true
 })
