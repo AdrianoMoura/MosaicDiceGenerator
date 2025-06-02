@@ -24,38 +24,43 @@
           /><br /><br />
 
           <label>Final dimensions (in dice):</label><br />
-          <input
-            type="number"
-            id="output-width"
-            min="1"
-            placeholder="Width (dice)"
-          />
-          <input
-            type="number"
-            id="output-height"
-            min="1"
-            placeholder="Height (dice)"
-          />
+          <div class="input-group">
+            <input
+              type="number"
+              id="output-width"
+              min="1"
+              placeholder="Width (dice)"
+            /> X
+            <input
+              type="number"
+              id="output-height"
+              min="1"
+              placeholder="Height (dice)"
+            />
+          </div>
           <p id="total-dice" style="margin: 0 0 10px 5px; font-size: 0.9em">
             Number of Dice: 0
           </p>
           <br /><br />
 
           <label>Final dimensions (cm):</label><br />
+          <div class="input-group">
           <input
             type="number"
             id="output-width-cm"
             min="0"
             step="0.1"
             placeholder="Width (cm)"
-          />
+          />X
           <input
             type="number"
             id="output-height-cm"
             min="0"
             step="0.1"
             placeholder="Height (cm)"
-          /><br /><br />
+          />
+          </div><br /><br />
+          
           <label for="dice-value">Price per Die:</label>
           <input
             type="number"

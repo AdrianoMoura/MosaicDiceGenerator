@@ -19,7 +19,7 @@ body {
 
 #sidebar {
   min-width: 400px;
-  width: 40vw;
+  width: 20vw;
   padding: 20px;
   background-color: #1e1e1e;
   border-right: 1px solid #333;
@@ -41,6 +41,12 @@ body {
   cursor: pointer;
   transform: scale(1.2);
   margin-right: 8px;
+}
+
+#sidebar .input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 #sidebar form input::file-selector-button {
